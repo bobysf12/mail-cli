@@ -2,6 +2,56 @@
 
 A CLI email reader and tagger for Gmail.
 
+## Examples
+
+```
+$ bun run mail ls
+
+Messages:
+
+* [1] 2/24/2026 | Alice: Project update
+* [2] 2/24/2026 | Bob: Meeting notes
+  [3] 2/23/2026 | Carol: Re: Budget approval
+```
+
+```
+$ bun run mail show 1
+
+============================================================
+Subject: Project update
+From: Alice Smith <alice@example.com>
+Date: 2/24/2026, 10:30:00 AM
+============================================================
+
+Hi team,
+
+Here's the weekly status update...
+```
+
+```
+$ bun run calendar ls
+
+Events:
+
+[1] 2026-03-01T10:00:00Z | Team sync
+[2] 2026-03-02T09:00:00Z [R] | Standup
+[3] 2026-03-03T14:00:00Z | Client call
+```
+
+```
+$ bun run calendar show 2
+
+============================================================
+Title: Standup
+When: 2026-03-02T09:00:00Z - 2026-03-02T09:15:00Z
+Location: N/A
+Status: confirmed
+RRULE: FREQ=DAILY;COUNT=10
+
+Daily standup with the team
+============================================================
+```
+
 ## Requirements
 
 - [Bun](https://bun.sh/) runtime
