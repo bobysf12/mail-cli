@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
-import { accounts, messages, tags, messageTags } from "../src/store/schema.js";
+import { accounts, messages, tags, messageTags, calendars, calendarEvents } from "../src/store/schema.js";
 import { eq } from "drizzle-orm";
 
 const testDbPath = ":memory:";
@@ -50,12 +50,49 @@ sqlite.run(`
   )
 `);
 
-const db = drizzle(sqlite, { schema: { accounts, messages, tags, messageTags } });
+sqlite.run(`
+  CREATE TABLE IF NOT EXISTS calendars (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id INTEGER NOT NULL REFERENCES accounts(id),
+    provider_calendar_id TEXT NOT NULL,
+    summary TEXT,
+    time_zone TEXT,
+    is_primary INTEGER DEFAULT 0
+  )
+`);
+
+sqlite.run(`
+  CREATE TABLE IF NOT EXISTS calendar_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id INTEGER NOT NULL REFERENCES accounts(id),
+    provider_calendar_id TEXT NOT NULL,
+    provider_event_id TEXT NOT NULL,
+    title TEXT,
+    description TEXT,
+    location TEXT,
+    start_at INTEGER,
+    end_at INTEGER,
+    is_all_day INTEGER DEFAULT 0,
+    status TEXT,
+    html_link TEXT,
+    rrule TEXT,
+    recurring_event_id TEXT,
+    original_start_time INTEGER,
+    updated_at INTEGER
+  )
+`);
+
+sqlite.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_calendars_account_provider ON calendars(account_id, provider_calendar_id)`);
+sqlite.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_calendar_events_account_provider ON calendar_events(account_id, provider_event_id)`);
+
+const db = drizzle(sqlite, { schema: { accounts, messages, tags, messageTags, calendars, calendarEvents } });
 
 beforeEach(() => {
   sqlite.run(`DELETE FROM message_tags`);
   sqlite.run(`DELETE FROM tags`);
   sqlite.run(`DELETE FROM messages`);
+  sqlite.run(`DELETE FROM calendar_events`);
+  sqlite.run(`DELETE FROM calendars`);
   sqlite.run(`DELETE FROM accounts`);
   
   sqlite.run(`
@@ -138,5 +175,29 @@ describe("database schema", () => {
 
     expect(existing.length).toBe(1);
     expect(existing[0].subject).toBe("Original");
+  });
+
+  test("can insert and query calendar events with rrule", async () => {
+    await db.insert(calendars).values({
+      accountId: 1,
+      providerCalendarId: "primary",
+      summary: "Primary",
+      isPrimary: true,
+    });
+
+    await db.insert(calendarEvents).values({
+      accountId: 1,
+      providerCalendarId: "primary",
+      providerEventId: "evt-123",
+      title: "Standup",
+      startAt: new Date("2026-03-01T09:00:00Z"),
+      endAt: new Date("2026-03-01T09:15:00Z"),
+      rrule: "FREQ=DAILY;COUNT=5",
+    });
+
+    const result = await db.select().from(calendarEvents);
+    expect(result.length).toBe(1);
+    expect(result[0].providerEventId).toBe("evt-123");
+    expect(result[0].rrule).toBe("FREQ=DAILY;COUNT=5");
   });
 });

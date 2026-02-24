@@ -19,7 +19,9 @@ bun install
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project or select existing one
-3. Enable Gmail API: APIs & Services → Library → search "Gmail API" → Enable
+3. Enable Gmail API and Google Calendar API:
+   - APIs & Services → Library → search "Gmail API" → Enable
+   - APIs & Services → Library → search "Google Calendar API" → Enable
 4. Create OAuth credentials:
    - APIs & Services → Credentials → Create Credentials → OAuth client ID
    - Application type: Desktop app
@@ -50,9 +52,13 @@ bun run db:migrate
 
 ```bash
 bun run mail auth
+# or, if you only use calendar:
+bun run calendar auth
 ```
 
 Opens a browser for Google OAuth consent. Credentials are stored securely.
+
+If you enabled Calendar later, run `mail auth` (or `calendar auth`) again so your token includes Calendar scopes.
 
 ### Check system health
 
@@ -99,6 +105,22 @@ bun run mail tag ls                   # List all tags
 bun run mail archive 123    # Archive message
 bun run mail delete 123     # Delete message
 ```
+
+### Manage calendar events
+
+```bash
+bun run calendar ls
+bun run calendar add --title "Team sync" --start "2026-03-01T10:00:00Z" --end "2026-03-01T10:30:00Z"
+bun run calendar add --title "Standup" --start "2026-03-02T09:00:00Z" --end "2026-03-02T09:15:00Z" --rrule "FREQ=DAILY;COUNT=10"
+bun run calendar show 1
+bun run calendar update 1 --rrule "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"
+bun run calendar update 1 --clear-rrule
+bun run calendar rm 1
+```
+
+Notes:
+- Recurrence uses RRULE format (RFC 5545 style), for example `FREQ=WEEKLY;BYDAY=MO`.
+- `calendar show/update/rm` use local event IDs produced by `calendar ls`.
 
 ## Data storage
 

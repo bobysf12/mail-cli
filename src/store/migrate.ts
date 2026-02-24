@@ -64,11 +64,46 @@ db.run(`
   )
 `);
 
+db.run(`
+  CREATE TABLE IF NOT EXISTS calendars (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id INTEGER NOT NULL REFERENCES accounts(id),
+    provider_calendar_id TEXT NOT NULL,
+    summary TEXT,
+    time_zone TEXT,
+    is_primary INTEGER DEFAULT 0
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS calendar_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id INTEGER NOT NULL REFERENCES accounts(id),
+    provider_calendar_id TEXT NOT NULL,
+    provider_event_id TEXT NOT NULL,
+    title TEXT,
+    description TEXT,
+    location TEXT,
+    start_at INTEGER,
+    end_at INTEGER,
+    is_all_day INTEGER DEFAULT 0,
+    status TEXT,
+    html_link TEXT,
+    rrule TEXT,
+    recurring_event_id TEXT,
+    original_start_time INTEGER,
+    updated_at INTEGER
+  )
+`);
+
 db.run(`CREATE INDEX IF NOT EXISTS idx_messages_account ON messages(account_id)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_messages_provider_id ON messages(provider_message_id)`);
 db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_messages_account_provider ON messages(account_id, provider_message_id)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_tags_account ON tags(account_id)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_message_tags_message ON message_tags(message_id)`);
+db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_calendars_account_provider ON calendars(account_id, provider_calendar_id)`);
+db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_calendar_events_account_provider ON calendar_events(account_id, provider_event_id)`);
+db.run(`CREATE INDEX IF NOT EXISTS idx_calendar_events_account ON calendar_events(account_id)`);
 
 db.close();
 

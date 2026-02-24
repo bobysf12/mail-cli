@@ -2,7 +2,7 @@ import { existsSync } from "fs";
 import { homedir } from "os";
 import keytar from "keytar";
 import { db } from "../store/db.js";
-import { accounts, messages, tags, syncState } from "../store/schema.js";
+import { accounts, messages, tags, syncState, calendars, calendarEvents } from "../store/schema.js";
 import { getStoredToken } from "../auth/oauth.js";
 
 const SERVICE_NAME = "mail-cli";
@@ -59,6 +59,14 @@ export async function doctorCommand() {
     const rows = await db.select().from(syncState);
     return rows.length > 0 ? `last sync: ${rows[0].lastSyncAt?.toLocaleString() || "never"}` : "no sync state";
   });
+  await check("Calendars table", async () => {
+    const rows = await db.select().from(calendars);
+    return `${rows.length} calendar(s)`;
+  });
+  await check("Calendar events table", async () => {
+    const rows = await db.select().from(calendarEvents);
+    return `${rows.length} event(s)`;
+  });
 
   console.log("\nEnvironment:");
   checkSync("GMAIL_CLIENT_ID set", () => !!process.env.GMAIL_CLIENT_ID);
@@ -81,13 +89,20 @@ export async function doctorCommand() {
       const token = await getStoredToken(account.email);
       if (token) {
         let valid = false;
+        let calendarScope = "unknown";
         try {
           const res = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
             headers: { Authorization: `Bearer ${token}` },
           });
           valid = res.ok;
+          if (valid) {
+            const calendarRes = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=1", {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            calendarScope = calendarRes.ok ? "ok" : "missing/re-auth needed";
+          }
         } catch {}
-        console.log(`  ${account.email}: ${valid ? "✓ valid" : "✗ invalid/expired"}`);
+        console.log(`  ${account.email}: ${valid ? "✓ valid" : "✗ invalid/expired"} | calendar: ${calendarScope}`);
       } else {
         console.log(`  ${account.email}: ✗ no token`);
       }

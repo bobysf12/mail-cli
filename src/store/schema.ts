@@ -42,3 +42,35 @@ export const syncState = sqliteTable("sync_state", {
   lastSyncAt: integer("last_sync_at", { mode: "timestamp" }),
   syncWindowDays: integer("sync_window_days").default(30),
 });
+
+export const calendars = sqliteTable("calendars", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  accountId: integer("account_id").notNull().references(() => accounts.id),
+  providerCalendarId: text("provider_calendar_id").notNull(),
+  summary: text("summary"),
+  timeZone: text("time_zone"),
+  isPrimary: integer("is_primary", { mode: "boolean" }).default(false),
+}, (table) => ({
+  accountCalendarIdx: uniqueIndex("idx_calendars_account_provider").on(table.accountId, table.providerCalendarId),
+}));
+
+export const calendarEvents = sqliteTable("calendar_events", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  accountId: integer("account_id").notNull().references(() => accounts.id),
+  providerCalendarId: text("provider_calendar_id").notNull(),
+  providerEventId: text("provider_event_id").notNull(),
+  title: text("title"),
+  description: text("description"),
+  location: text("location"),
+  startAt: integer("start_at", { mode: "timestamp" }),
+  endAt: integer("end_at", { mode: "timestamp" }),
+  isAllDay: integer("is_all_day", { mode: "boolean" }).default(false),
+  status: text("status"),
+  htmlLink: text("html_link"),
+  rrule: text("rrule"),
+  recurringEventId: text("recurring_event_id"),
+  originalStartTime: integer("original_start_time", { mode: "timestamp" }),
+  updatedAt: integer("updated_at", { mode: "timestamp" }),
+}, (table) => ({
+  accountEventIdx: uniqueIndex("idx_calendar_events_account_provider").on(table.accountId, table.providerEventId),
+}));

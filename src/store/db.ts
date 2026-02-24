@@ -25,3 +25,7 @@ export type Message = typeof schema.messages.$inferSelect;
 export type NewMessage = typeof schema.messages.$inferInsert;
 export type Tag = typeof schema.tags.$inferSelect;
 export type NewTag = typeof schema.tags.$inferInsert;
+export type Calendar = typeof schema.calendars.$inferSelect;
+export type NewCalendar = typeof schema.calendars.$inferInsert;
+export type CalendarEvent = typeof schema.calendarEvents.$inferSelect;
+export type NewCalendarEvent = typeof schema.calendarEvents.$inferInsert;
